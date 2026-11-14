@@ -32,14 +32,19 @@ jobs:
           python3 scripts/fetch_reverse_tools.py --refresh
 
       - name: Build unsigned device IPA
-        env:
-          # 仓库内置 SDK26 覆盖构建脚本默认的仓库外路径
-          DYLIX_SDK_26_0: ${{ github.workspace }}/LocalSDKs/iPhoneOS26.0.sdk
-          # build_ish.py 需要 LLVM ld.lld 链接 guest ELF VDSO
-          DYLIX_LLD: /opt/homebrew/opt/llvm/bin/ld.lld
         run: |
-          ls -l /opt/homebrew/opt/llvm/bin/ld.lld
-          python3 scripts/build.py --sdk-root LocalSDKs/iPhoneOS26.0.sdk
+          set -e
+          LLD=""
+          for c in "$(brew --prefix llvm)/bin/ld.lld" "$(brew --prefix lld 2>/dev/null || true)/bin/ld.lld"; do
+            [ -x "$c" ] && LLD="$c" && break
+          done
+          if [ -z "$LLD" ]; then
+            brew install lld
+            LLD="$(brew --prefix lld)/bin/ld.lld"
+          fi
+          echo "Using DYLIX_LLD=$LLD"
+          DYLIX_SDK_26_0="$PWD/LocalSDKs/iPhoneOS26.0.sdk" DYLIX_LLD="$LLD" \
+            python3 scripts/build.py --sdk-root LocalSDKs/iPhoneOS26.0.sdk
 
       - name: Collect artifacts
         run: |
