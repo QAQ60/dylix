@@ -105,7 +105,7 @@ static NSDictionary *WorkBuddyMergeToken(NSDictionary *token,NSDictionary *base)
  self.epochs[identifier]=@([self.epochs[identifier] unsignedIntegerValue]+1);self.presenter=presenter;NSUInteger loginSerial=++self.loginSerial;NSUInteger epoch=[self.epochs[identifier] unsignedIntegerValue];__weak typeof(self) weak=self;
  NSString *query=[NSString stringWithFormat:@"?platform=%@",[site[@"platform"] stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet characterSetWithCharactersInString:@"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"]]];
  NSMutableDictionary *startHeaders=[WorkBuddyJSONHeaders() mutableCopy];startHeaders[@"X-No-Authorization"]=@"true";startHeaders[@"X-No-User-Id"]=@"true";startHeaders[@"X-No-Enterprise-Id"]=@"true";startHeaders[@"X-No-Department-Info"]=@"true";
- [self workBuddyCall:[NSURL URLWithString:[site[@"endpoint"] stringByAppendingString:query]] method:@"POST" headers:startHeaders body:@{} completion:^(NSDictionary *started,NSError *failure){
+ [self workBuddyCall:[NSURL URLWithString:[site[@"endpoint"] stringByAppendingString:[@"/v2/plugin/auth/state" stringByAppendingString:query]]] method:@"POST" headers:startHeaders body:@{} completion:^(NSDictionary *started,NSError *failure){
   if(epoch!=[weak.epochs[identifier] unsignedIntegerValue]){completion(nil,AuthError(@"登录状态已变更，请重试。"));return;}
   if(failure||![started[@"state"] isKindOfClass:NSString.class]||![started[@"state"] length]||![started[@"authUrl"] isKindOfClass:NSString.class]){completion(nil,failure?:AuthError(@"服务商未返回登录页，请稍后重试。"));return;}
   NSString *state=started[@"state"];
