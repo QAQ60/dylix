@@ -1,0 +1,76 @@
+name: Build unsigned IPA (WorkBuddy)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/build-ipa.yml']
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 150
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          brew install cmake meson ninja llvm
+          echo "/opt/homebrew/opt/llvm/bin" >> "$GITHUB_PATH"
+          rustup target add aarch64-apple-ios x86_64-apple-ios
+          python3 --version
+
+      - name: Restore pinned toolchain (Vendor xcframeworks)
+        run: python3 scripts/fetch_toolchain.py
+
+      - name: Fetch iSH offline kits
+        run: |
+          python3 scripts/fetch_ish_packages.py
+          python3 scripts/fetch_reverse_tools.py
+
+      - name: Build unsigned device IPA
+        run: python3 scripts/build.py --sdk-root LocalSDKs/iPhoneOS26.0.sdk
+
+      - name: Collect artifacts
+        run: |
+          ls -lh build/*.ipa
+          shasum -a 256 build/*.ipa | tee SHA256SUMS-workbuddy.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dylix-workbuddy-unsigned-ipa
+          path: |
+            build/*.ipa
+            SHA256SUMS-workbuddy.txt
+          if-no-files-found: error
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat > notes.md <<'EOF'
+          ## Dylix 1.1.3 · Build 272 · 开源版 + WorkBuddy 服务商支持（未签名）
+
+          本安装包在官方 1.1.3 (272) 开源版基础上，新增了 **WorkBuddy（CodeBuddy 计划）模型服务商支持**（见提交 b70ddcd 与 `docs/WORKBUDDY.md`）：
+
+          - `WorkBuddy · CodeBuddy 中国区`（copilot.tencent.com）
+          - `WorkBuddy AI · 国际版`（www.workbuddy.ai）
+          - 官方扫码登录（state → 授权页 → token/账户双轮询）、自动续期
+          - `/v3/config` 模型发现、网关兼容请求头与 system 首消息修补
+
+          **未签名 IPA**：安装前需自行重签名（个人证书/适用分发方式），与上游官方发行版的签名要求一致。
+          源码与上游完全一致，仅叠加 WorkBuddy 支持提交；SHA-256 见附件 `SHA256SUMS-workbuddy.txt`。
+
+          ---
+          构建流水线：本仓库 GitHub Actions（macOS runner）；上游仓库 [yangokok886/dylix](https://github.com/yangokok886/dylix)。
+          EOF
+          IPA=$(ls build/*.ipa)
+          if gh release view v1.1.3-workbuddy >/dev/null 2>&1; then
+            gh release upload v1.1.3-workbuddy "$IPA" SHA256SUMS-workbuddy.txt --clobber
+          else
+            gh release create v1.1.3-workbuddy "$IPA" SHA256SUMS-workbuddy.txt \
+              --title "Dylix 1.1.3 (272) 开源版 + WorkBuddy（未签名）" \
+              --notes-file notes.md
+          fi
