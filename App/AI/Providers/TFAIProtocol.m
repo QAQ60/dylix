@@ -178,6 +178,15 @@ NSDictionary *TFAIRequestBody(NSArray *messages,NSDictionary *c,NSArray *tools,B
   for(NSString *text in system){NSRange snapshot=[text rangeOfString:@"【本轮环境快照】"];if(!marked&&snapshot.location!=NSNotFound&&snapshot.location>0){[blocks addObject:@{@"type":@"text",@"text":[text substringToIndex:snapshot.location],@"cache_control":@{@"type":@"ephemeral"}}];[blocks addObject:@{@"type":@"text",@"text":[text substringFromIndex:snapshot.location]}];marked=YES;}else if(text.length)[blocks addObject:@{@"type":@"text",@"text":text}];}
   if(!marked&&blocks.count){NSMutableDictionary *last=[blocks.lastObject mutableCopy];last[@"cache_control"]=@{@"type":@"ephemeral"};blocks[blocks.count-1]=last;}if(blocks.count)body[@"system"]=blocks;
  }
+ // WorkBuddy 网关：首条消息必须是 system（否则报 "first message is not system
+ // prompt"），不认 OpenAI 的 stream_options；对话体其余保持 OpenAI 兼容。
+ if([original isEqual:@"workbuddy"]||[original isEqual:@"workbuddy-ai"]){
+  [body removeObjectForKey:@"stream_options"];
+  NSMutableArray *sent=[body[@"messages"] isKindOfClass:NSArray.class]?[body[@"messages"] mutableCopy]:nil;
+  if(sent.count){BOOL firstSystem=[sent.firstObject isKindOfClass:NSDictionary.class]&&[sent.firstObject[@"role"] isKindOfClass:NSString.class]&&[sent.firstObject[@"role"] isEqual:@"system"];
+   if(!firstSystem)[sent insertObject:@{@"role":@"system",@"content":@"You are a helpful assistant."} atIndex:0];
+   body[@"messages"]=sent;}
+ }
  return body;
 }
 @interface TFAIStreamDecoder ()

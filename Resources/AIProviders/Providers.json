@@ -198,6 +198,52 @@
       "modelsURL": "https://api.x.ai/v1/models"
     },
     {
+      "id": "workbuddy",
+      "name": "WorkBuddy · CodeBuddy 中国区",
+      "baseURL": "https://copilot.tencent.com/v2",
+      "description": "腾讯 CodeBuddy 计划（中国区）；官方扫码登录，OpenAI 兼容接口",
+      "wireProtocol": "chat",
+      "auth": [
+        "oauth"
+      ],
+      "capabilities": {
+        "text": "unknown",
+        "stream": "unknown",
+        "image": "unknown",
+        "tools": "unknown",
+        "thinking": "unknown"
+      },
+      "modelsURL": "https://copilot.tencent.com/v3/config",
+      "oauth": {
+        "kind": "workbuddy",
+        "platform": "workbuddy",
+        "documentationURL": "https://github.com/yangokok886/dylix/blob/main/docs/WORKBUDDY.md"
+      }
+    },
+    {
+      "id": "workbuddy-ai",
+      "name": "WorkBuddy AI · 国际版",
+      "baseURL": "https://www.workbuddy.ai/v2",
+      "description": "CodeBuddy 国际版计划（workbuddy.ai）；官方扫码登录，OpenAI 兼容接口",
+      "wireProtocol": "chat",
+      "auth": [
+        "oauth"
+      ],
+      "capabilities": {
+        "text": "unknown",
+        "stream": "unknown",
+        "image": "unknown",
+        "tools": "unknown",
+        "thinking": "unknown"
+      },
+      "modelsURL": "https://www.workbuddy.ai/v3/config",
+      "oauth": {
+        "kind": "workbuddy",
+        "platform": "workbuddy-ai",
+        "documentationURL": "https://github.com/yangokok886/dylix/blob/main/docs/WORKBUDDY.md"
+      }
+    },
+    {
       "id": "custom",
       "name": "自定义 OpenAI 兼容服务",
       "baseURL": "",
