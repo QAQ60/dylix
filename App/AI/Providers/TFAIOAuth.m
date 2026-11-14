@@ -24,7 +24,7 @@ static NSInteger const TFWorkBuddyAccountPendingCode=12151;      // 账户未就
 static NSTimeInterval const TFWorkBuddySignInWindow=5*60;        // 登录页等待上限
 static NSTimeInterval const TFWorkBuddyExpiryMargin=5*60;        // 提前 5 分钟续期
 static NSDictionary *WorkBuddySite(NSDictionary *oauth){NSString *platform=[oauth[@"platform"] isKindOfClass:NSString.class]?oauth[@"platform"]:@"";
- NSString *endpoint=[oauth[@"endpoint"] isKindOfClass:NSString.class]?oauth[@"endpoint"]:"";
+ NSString *endpoint=[oauth[@"endpoint"] isKindOfClass:NSString.class]?oauth[@"endpoint"]:@"";
  if(endpoint.length){while([endpoint hasSuffix:@"/"])endpoint=[endpoint substringToIndex:endpoint.length-1];return @{@"platform":platform.length?platform:@"workbuddy",@"endpoint":endpoint};}
  // 兼容：未写 endpoint 时按 platform 推断官方地址。
  if([platform isEqual:@"workbuddy-ai"])return @{@"platform":platform,@"endpoint":@"https://www.workbuddy.ai"};

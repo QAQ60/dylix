@@ -14,13 +14,13 @@ static NSNumber *TFOriginPort(NSURL *url){return url.port?:([url.scheme.lowercas
 // WorkBuddy（CodeBuddy 计划）：/v3/config 是账户自己的产品配置，cli 代理的
 // models 就是其客户端选择器列出的清单。解析为模型目录行，能力声明交给
 // TFAISanitizeModelMetadata（efforts → thinking，input_modalities → text/image）。
-static NSString *TFWorkBuddyEfforts(id detail){NSMutableDictionary *out=[NSMutableDictionary new];id reasoning=[detail isKindOfClass:NSDictionary.class]?detail[@"reasoning"]:nil;
+static NSArray *TFWorkBuddyEfforts(id detail){id reasoning=[detail isKindOfClass:NSDictionary.class]?detail[@"reasoning"]:nil;
  NSArray *said=[reasoning isKindOfClass:NSDictionary.class]?reasoning[@"supportedEfforts"]:nil;
  NSMutableArray *levels=[NSMutableArray new];
  if([said isKindOfClass:NSArray.class]&&said.count){for(id level in said)if([level isKindOfClass:NSString.class]&&levels.count<16)[levels addObject:level];}
  else if([detail[@"supportsReasoning"] isKindOfClass:NSNumber.class]&&[detail[@"supportsReasoning"] boolValue]){NSArray *order=@[@"low",@"medium",@"high",@"xhigh",@"max"];NSSet *taken=[NSSet setWithArray:@[@"low",@"high",@"max"]];NSString *own=[reasoning isKindOfClass:NSDictionary.class]?reasoning[@"effort"]:nil;if([own isKindOfClass:NSString.class]&&[order containsObject:own]){NSMutableSet *all=[NSMutableSet setWithSet:taken];[all addObject:own];taken=all;}for(NSString *level in order)if([taken containsObject:level])[levels addObject:level];}
  if(levels.count){BOOL only=[detail[@"onlyReasoning"] isKindOfClass:NSNumber.class]&&[detail[@"onlyReasoning"] boolValue];BOOL canDisable=YES;if([reasoning isKindOfClass:NSDictionary.class]&&[reasoning[@"canDisableThinking"] isKindOfClass:NSNumber.class])canDisable=[reasoning[@"canDisableThinking"] boolValue];if(!only&&canDisable)[levels insertObject:@"none" atIndex:0];}
- out[@"levels"]=levels;return out[@"levels"];}
+ return levels;}
 static NSDictionary *TFWorkBuddyConfigModels(id json){
  if(![json isKindOfClass:NSDictionary.class])return nil;NSInteger code=[json[@"code"] isKindOfClass:NSNumber.class]?[json[@"code"] integerValue]:0;
  if(code!=0){NSString *said=[json[@"msg"] isKindOfClass:NSString.class]?json[@"msg"]:@"";
@@ -29,7 +29,7 @@ static NSDictionary *TFWorkBuddyConfigModels(id json){
  NSMutableDictionary *detailMap=[NSMutableDictionary new];for(id detail in ([data[@"models"] isKindOfClass:NSArray.class]?data[@"models"]:@[]))if([detail isKindOfClass:NSDictionary.class]&&[detail[@"id"] isKindOfClass:NSString.class])detailMap[detail[@"id"]]=detail;
  NSMutableArray *rows=[NSMutableArray new];
  for(id agent in ([data[@"agents"] isKindOfClass:NSArray.class]?data[@"agents"]:@[])){if(![agent isKindOfClass:NSDictionary.class]||![agent[@"name"] isEqual:@"cli"])continue;
-  for(id identifier in ([agent[@"models"] isKindOfClass:NSArray.class]?agent[@"models"]:@[])){if(![identifier isKindOfClass:NSString.class]||!identifier.length||rows.count>=10000)continue;
+  for(id identifier in ([agent[@"models"] isKindOfClass:NSArray.class]?agent[@"models"]:@[])){if(![identifier isKindOfClass:NSString.class]||![(NSString *)identifier length]||rows.count>=10000)continue;
    NSDictionary *detail=detailMap[identifier]?:@{};NSMutableDictionary *row=[@{@"id":identifier} mutableCopy];
    NSString *name=[detail[@"name"] isKindOfClass:NSString.class]?detail[@"name"]:@"";if(name.length)row[@"name"]=name;
    BOOL images=[detail[@"supportsImages"] isKindOfClass:NSNumber.class]&&[detail[@"supportsImages"] boolValue];
