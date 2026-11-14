@@ -27,7 +27,9 @@ jobs:
       - name: Fetch iSH offline kits
         run: |
           python3 scripts/fetch_ish_packages.py
-          python3 scripts/fetch_reverse_tools.py
+          # Alpine edge 是滚动仓库，固定清单中的依赖版本会被上游移除（404）。
+          # radare2/r2ghidra 仍为脚本要求的 6.2.6-r0，用 --refresh 重新解析依赖闭包。
+          python3 scripts/fetch_reverse_tools.py --refresh
 
       - name: Build unsigned device IPA
         run: python3 scripts/build.py --sdk-root LocalSDKs/iPhoneOS26.0.sdk
