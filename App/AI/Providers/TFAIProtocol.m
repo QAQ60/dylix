@@ -182,10 +182,21 @@ NSDictionary *TFAIRequestBody(NSArray *messages,NSDictionary *c,NSArray *tools,B
  // prompt"），不认 OpenAI 的 stream_options；对话体其余保持 OpenAI 兼容。
  if([original isEqual:@"workbuddy"]||[original isEqual:@"workbuddy-ai"]){
   [body removeObjectForKey:@"stream_options"];
+  // 网关只支持流式（"Non-stream chat request is currently not supported"）：
+  // 一律强制 stream:true，传输层按响应 Content-Type 自动走 SSE 解码。
+  body[@"stream"]=@YES;
   NSMutableArray *sent=[body[@"messages"] isKindOfClass:NSArray.class]?[body[@"messages"] mutableCopy]:nil;
   if(sent.count){BOOL firstSystem=[sent.firstObject isKindOfClass:NSDictionary.class]&&[sent.firstObject[@"role"] isKindOfClass:NSString.class]&&[sent.firstObject[@"role"] isEqual:@"system"];
    if(!firstSystem)[sent insertObject:@{@"role":@"system",@"content":@"You are a helpful assistant."} atIndex:0];
    body[@"messages"]=sent;}
+  // tool_choice 只接受字符串；对象形式按 kwwk 的语义改写，none 连工具一起去掉。
+  id choice=body[@"tool_choice"];
+  if([choice isKindOfClass:NSString.class]){if([Str(choice).lowercaseString isEqual:@"none"]){for(NSString *f in @[@"tool_choice",@"tools",@"functions",@"parallel_tool_calls"])[body removeObjectForKey:f];}}
+  else if([choice isKindOfClass:NSDictionary.class]){NSString *type=Str(choice[@"type"]).lowercaseString;
+   if([type isEqual:@"none"]){for(NSString *f in @[@"tool_choice",@"tools",@"functions",@"parallel_tool_calls"])[body removeObjectForKey:f];}
+   else if([type isEqual:@"auto"]||[type isEqual:@"required"])body[@"tool_choice"]=type;
+   else if([type isEqual:@"function"]){NSString *name=Str(choice[@"function"][@"name"]);if(name.length)body[@"tool_choice"]=name;else{body[@"tool_choice"]=@"auto";}}
+   else[body removeObjectForKey:@"tool_choice"];}
  }
  return body;
 }
