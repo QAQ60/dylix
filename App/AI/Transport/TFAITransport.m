@@ -123,6 +123,14 @@ NSMutableURLRequest *request=[NSMutableURLRequest requestWithURL:url];request.ti
   NSString *uid=[record[@"uid"] isKindOfClass:NSString.class]?record[@"uid"]:@"";if(uid.length)[request setValue:uid forHTTPHeaderField:@"X-User-Id"];
   NSString *domain=[record[@"domain"] isKindOfClass:NSString.class]&&[record[@"domain"] length]?record[@"domain"]:url.host;[request setValue:domain forHTTPHeaderField:@"X-Domain"];
   NSString *enterprise=[record[@"enterpriseId"] isKindOfClass:NSString.class]?record[@"enterpriseId"]:@"";if(enterprise.length){[request setValue:enterprise forHTTPHeaderField:@"X-Enterprise-Id"];[request setValue:enterprise forHTTPHeaderField:@"X-Tenant-Id"];}
+  if(!models){
+   // 会话标识四件套（kwwk 同款）：国际版网关要求，缺失按非法调用 400。
+   // 32 位 hex；同一请求内 message/request 同值，turn/conversation 各自独立。
+   NSString *requestID=[[[NSUUID UUID] UUIDString] stringByReplacingOccurrencesOfString:@"-" withString:@""].lowercaseString;
+   [request setValue:requestID forHTTPHeaderField:@"X-Conversation-Message-ID"];
+   [request setValue:requestID forHTTPHeaderField:@"X-Request-ID"];
+   [request setValue:[[[NSUUID UUID] UUIDString] stringByReplacingOccurrencesOfString:@"-" withString:@""].lowercaseString forHTTPHeaderField:@"X-Conversation-Request-ID"];
+   [request setValue:[[[NSUUID UUID] UUIDString] stringByReplacingOccurrencesOfString:@"-" withString:@""].lowercaseString forHTTPHeaderField:@"X-Conversation-ID"];}
  }
  BOOL oauth=[connection[@"authMethod"] isEqual:@"oauth"];NSString *key=oauth?self.oauthCredential:[TFAIConnections secret:connection[@"id"]?:@""];if(oauth&&[connection[@"oauthProjectID"] length])[request setValue:connection[@"oauthProjectID"] forHTTPHeaderField:@"x-goog-user-project"];if(key.length){if(oauth)[request setValue:[@"Bearer " stringByAppendingString:key] forHTTPHeaderField:@"Authorization"];else if([connection[@"protocol"] isEqual:@"anthropic"])[request setValue:key forHTTPHeaderField:@"x-api-key"];else if([connection[@"protocol"] isEqual:@"gemini"])[request setValue:key forHTTPHeaderField:@"x-goog-api-key"];else[request setValue:[@"Bearer " stringByAppendingString:key] forHTTPHeaderField:@"Authorization"];}
  if([connection[@"protocol"] isEqual:@"anthropic"])[request setValue:@"2023-06-01" forHTTPHeaderField:@"anthropic-version"];
